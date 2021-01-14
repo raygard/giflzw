@@ -1,5 +1,6 @@
-/* decompress LZW files
-*/
+/* lzwd_basic.c -- decode LZW files - basic version
+ * Copyright 2021 Raymond D. Gardner
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

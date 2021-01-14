@@ -1,5 +1,6 @@
-/* decompress LZW files
-*/
+/* lzwd_vwc.c -- decode LZW files - with variable width codes
+ * Copyright 2021 Raymond D. Gardner
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

@@ -1,5 +1,6 @@
-/* compress LZW files
-*/
+/* lzwe_vwc.c -- encode LZW files - with variable width codes
+ * Copyright 2021 Raymond D. Gardner
+ */
 #include <stdio.h>
 #include <stdlib.h>
 

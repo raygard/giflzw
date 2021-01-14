@@ -1,5 +1,6 @@
-/* compress LZW files
-*/
+/* lzwe_basic.c -- encode LZW files - basic version
+ * Copyright 2021 Raymond D. Gardner
+ */
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -72,18 +73,12 @@ void insert_in_table(Uint head, Uint tail, Uint code)
     codes[probe] = code;
 }
         
-void reset()
-{
-    Uint i;
-    for (i = 0; i < TABLE_SIZE; i++)
-        heads[i] = NOCODE;
-    next_code = END + 1;
-}
-
 void encode()
 {
-    Uint head, tail, code;
-    reset();
+    Uint i, head, tail, code;
+
+    for (i = 0; i < TABLE_SIZE; i++)
+        heads[i] = NOCODE;
     head = getc(inf);
     if (head != EOF) {
         while ((tail = getc(inf)) != EOF) {
@@ -91,12 +86,8 @@ void encode()
                 head = code;
             } else {
                 put_code(head);
-                if (next_code < CODE_LIMIT) {
+                if (next_code < CODE_LIMIT)
                     insert_in_table(head, tail, next_code++);
-                } else {
-                    put_code(CLEAR);
-                    reset();
-                }
                 head = tail;
             }
         }

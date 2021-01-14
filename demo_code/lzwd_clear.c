@@ -1,5 +1,6 @@
-/* decompress LZW files
-*/
+/* lzwd_clear.c -- decode LZW files - with CLEAR codes
+ * Copyright 2021 Raymond D. Gardner
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
