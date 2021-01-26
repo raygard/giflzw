@@ -164,7 +164,7 @@ if head != EOF:
 
 [Working C code in the `demo_code` directory:](https://github.com/raygard/giflzw/blob/main/demo_code/lzwe_clear.c)
 
-The corresponding decoder looks a bit different from the basic version. As explained in the ["Cover Sheet for the GIF89a Specification"](w3.org/Graphics/GIF/spec-gif89a.txt):
+The corresponding decoder looks a bit different from the basic version. As explained in the ["Cover Sheet for the GIF89a Specification"](https://w3.org/Graphics/GIF/spec-gif89a.txt):
 
 > There has been confusion about where clear codes can be found in the data stream.  As the specification says, they may appear at anytime.  There is not a requirement to send a clear code when the string table is full.
 
