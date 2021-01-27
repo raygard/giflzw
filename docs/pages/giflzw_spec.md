@@ -14,7 +14,6 @@ giflzw is a small C library for _incrementally_ encoding and decoding GIF image 
 
 The giflzw library is general enough it may be used for encoding and decoding data other than GIF image data, but there are better alternatives in probably every case.
 
-
 ---
 
 ## Common definitions and declarations
@@ -37,6 +36,9 @@ In the examples here, I use `Uint` and `Byte` for these types.
 ---
 
 ## Encoding (compression)
+
+[source code: header file](https://github.com/raygard/giflzw/blob/main/src/glzwe.h)
+and [implementation](https://github.com/raygard/giflzw/blob/main/src/glzwe.c)
 
 ### Header file for the encoding routines
 
@@ -145,6 +147,9 @@ Release the memory allocated by `glzwe_init()` for the state structure.
 ---
 
 ## Decoding (decompression)
+
+[source code: header file](https://github.com/raygard/giflzw/blob/main/src/glzwd.h)
+and [implementation](https://github.com/raygard/giflzw/blob/main/src/glzwd.c)
 
 ---
 
