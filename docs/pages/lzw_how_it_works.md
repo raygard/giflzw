@@ -14,7 +14,7 @@ The LZW encoder converts its input to a series of numeric codes, and the decoder
 
 The encoder keeps a table of byte strings and corresponding code values. The codes range from 0 to 4095. The codes from 0 through 255 represent the corresponding one-byte strings. Two special codes, 256 and 257 are reserved and called CLEAR and END respectively. As the encoder reads the data, it assigns additional codes in ascending order to byte strings as they are encountered in the input.
 
-At each step, the encoder find the longest string in its table that matches the remaining bytes in the input and emits the corresponding code. I call this string the head. It looks at the next byte, which I call the tail. (Welch calls the head and tail the prefix string and the extension character.) It then assigns the next available code to the string formed by appending the tail to the head. The encoder then continues with the tail as the first byte of the new head.
+At each step, the encoder finds the longest string in its table that matches the remaining bytes in the input and emits the corresponding code. I call this string the head. It looks at the next byte, which I call the tail. (Welch calls the head and tail the prefix string and the extension character.) It then assigns the next available code to the string formed by appending the tail to the head. The encoder then continues with the tail as the first byte of the new head.
 
 Welch gives the algorithm as:
 
