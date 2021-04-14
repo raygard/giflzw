@@ -52,6 +52,8 @@ Here is the usage screen:
     -p filename -- write pixel data
     -z filename -- write lzw data (de-blocked)
     -b filename -- write a bmp file
+    -g     hex dump global color table (GCT)
+    -l     hex dump all local color tables (LCTs)
 ```
 
 All filenames are specified after option flags.
