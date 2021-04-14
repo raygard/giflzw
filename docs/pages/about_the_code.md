@@ -21,9 +21,9 @@ Why incremental? The PIL GifEncode.c module accepts bytes to be encoded in chunk
 The interface was somewhat inspired by the use of `avail_in` and `avail_out` in the `z_stream` structure of *zlib*.
 
 Before cavilling about the abuse of the switch/case statement or the use of goto statements, I invite you to have a look at 
-Simon Tatam's (author of the PuTTY SSH/Telnet client) [piece on coroutines](https://www.chiark.greenend.org.uk/~sgtatham/coroutines.html).
+Simon Tatham's (author of the PuTTY SSH/Telnet client) [piece on coroutines](https://www.chiark.greenend.org.uk/~sgtatham/coroutines.html).
 
-Consider that in his classic, *Structured Programming with goto Statements* (ACM Computing Surveys, December 1974), Donald Knuth suggests that goto statements can be used to implement coroutines in a language that lacks them as a built-in structure. ([See here](http://www.kohala.com/start/papers.others/knuth.dec74.html#coroutines).)
+Consider also that in his classic, *Structured Programming with goto Statements* (ACM Computing Surveys, December 1974), Donald Knuth suggests that goto statements can be used to implement coroutines in a language that lacks them as a built-in structure. ([See here](http://www.kohala.com/start/papers.others/knuth.dec74.html#coroutines).)
 
 These encoding and decoding routines are incremental. They need to be able to proceed with encoding or decoding a piece at a time. This requires a kind of semicoroutine, the ability to return and then continue from the point of return the next time it is called.
 
