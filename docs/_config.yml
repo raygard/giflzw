@@ -33,7 +33,7 @@ github_username:  raygard
 
 # Build settings
 remote_theme: pmarsceill/just-the-docs
-theme: "just-the-docs"
+# theme: "just-the-docs"
 plugins:
   - jekyll-feed
 
