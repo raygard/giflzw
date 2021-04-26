@@ -14,3 +14,4 @@ This is not good for much other than GIF encoding/decoding; more modern compress
 
 The library, examples, demo and utility programs have been tested in Ubuntu Linux under WSL2 and in Windows 10 using the MinGW-W64 gcc compiler in 32-bit mode.
 
+The source for the library, including these docs, is in <https://github.com/raygard/giflzw>.
