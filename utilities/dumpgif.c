@@ -21,6 +21,9 @@ char *usage_msg[] = {
 
 "    -g     hex dump global color table (GCT)",
 "    -l     hex dump all local color tables (LCTs)",
+"",
+"   -p filename and -z filename will have a 3-digit frame number",
+"   (0-based) appended.",
     NULL
     };
 
@@ -88,6 +91,21 @@ Word getbyte(Byte **p)
     return v;
 }
 
+/* Dump color table */
+void dump_ct(char *baddr, size_t num_entries)
+{
+    for (int n = 0; n < num_entries; n++) {
+        if (n % 10 == 0)
+            printf("%4d", n);
+        printf("  %02x", (Byte)(*baddr++));
+        printf("%02x", (Byte)(*baddr++));
+        printf("%02x", (Byte)(*baddr++));
+        if ((n + 1) % 10 == 0)
+            printf("\n");
+    }
+    printf("\n");
+}
+
 static int chsz = -1;
 void lzd(char *px, Word image_size, char *lzwbuf, Word lzwbufcnt, Word lzw_min_code_size)
 {
@@ -118,12 +136,13 @@ void lzd(char *px, Word image_size, char *lzwbuf, Word lzwbufcnt, Word lzw_min_c
     glzwd_end(st);
 }
 
-Byte *do_image(int opts, char *infile, char *pixelfile, char *lzwfile, char
-        *bmpfile, char *d, char *d_lim, Byte *p, Word background_color_index,
-        Word global_color_table_flag, Word global_color_table_size, char *gct,
-        int transparent_color_index)
+Byte *do_image(int opts, int framenum, char *infile, char *pixelfile,
+        char *lzwfile, char *bmpfile, char *d, char *d_lim, Byte *p,
+        Word background_color_index, Word global_color_table_flag,
+        Word global_color_table_size, char *gct, int transparent_color_index)
 {
     printf("Image Descriptor at 0x%0lx:\n", (Dword)((char *)p - d));
+    printf("Frame num %u\n", framenum);
     Word image_left_pos = getword(&p);
     Word image_top_pos = getword(&p);
     Word image_width = getword(&p);
@@ -141,8 +160,8 @@ Byte *do_image(int opts, char *infile, char *pixelfile, char *lzwfile, char
     Word local_color_table_size_base = packed & 0x7;
     Word local_color_table_size = local_color_table_flag ? 1 <<
         (local_color_table_size_base + 1) : 0;
-    //printf("lct_flag: %u interlace: %u sort: %u rsv: %u lct_size: %u (%u)\n",
-    printf("lct_flag:%u  interlace:%u  sort:%u  rsv:%u  lct_size:%u (%u)",
+    //printf("LCT_flag: %u interlace: %u sort: %u rsv: %u LCT_size: %u (%u)\n",
+    printf("LCT_flag:%u  interlace:%u  sort:%u  rsv:%u  LCT_size:%u (%u)",
         local_color_table_flag, interlace_flag, sort_flag, reserved,
         local_color_table_size_base, local_color_table_size);
 
@@ -151,11 +170,12 @@ Byte *do_image(int opts, char *infile, char *pixelfile, char *lzwfile, char
     if (local_color_table_flag) {
         lct = (char *)mmalloc(3 * local_color_table_size);
         memmove(lct, p, 3 * local_color_table_size);
-        Dword crc = crc32(lct, local_color_table_size, 0);
-        printf(" LCT CRC: %08x\n", (Word)crc);
+        Dword crc = crc32(lct, 3 * local_color_table_size, 0);
+        printf(" LCT_CRC: %08x\n", (Word)crc);
         if (opts & OPT_LCT) {
             printf("Local Color Table (LCT):\n");
-            xdump(lct, 3 * local_color_table_size, (char *)p - d);
+            //xdump(lct, 3 * local_color_table_size, (char *)p - d);
+            dump_ct(lct, local_color_table_size);
         }
         p += 3 * local_color_table_size;
     } else {
@@ -173,7 +193,7 @@ Byte *do_image(int opts, char *infile, char *pixelfile, char *lzwfile, char
 
         Byte *t = (Byte *)ct + 3 * transparent_color_index;
         Word tc = (t[0] << 16) + (t[1] << 8) + t[2];
-        printf("transparent color: 0x%06x\n", tc);
+        printf("transp_color: 0x%06x\n", tc);
     }
 
     printf("Image Data at 0x%0lx:\n", (Dword)((char *)p - d));
@@ -222,8 +242,13 @@ Byte *do_image(int opts, char *infile, char *pixelfile, char *lzwfile, char
 #endif
     todump = t - lzwbuf;
     if (opts & OPT_LZW) {
-        FILE *fp = fopen(lzwfile, "wb");
+        //FILE *fp = fopen(lzwfile, "wb");
+        char *lzfn = (char *)mmalloc(strlen(lzwfile) + 10);
+        strcpy(lzfn, lzwfile);
+        sprintf(lzfn + strlen(lzwfile), "%03u", framenum);
+        FILE *fp = fopen(lzfn, "wb");
         assert(fp);
+        free(lzfn);
         printf("Writing %d lzw from %p\n", todump, lzwbuf);
         fwrite(lzwbuf, 1, todump, fp);
         fclose(fp);
@@ -238,8 +263,13 @@ Byte *do_image(int opts, char *infile, char *pixelfile, char *lzwfile, char
     //xdump((char *)px, image_size, 0);
     todump = image_size;
     if (opts & OPT_PIXEL) {
-        FILE *fp = fopen(pixelfile, "ab");
+        //FILE *fp = fopen(pixelfile, "ab");
+        char *pxfn = (char *)mmalloc(strlen(pixelfile) + 10);
+        strcpy(pxfn, pixelfile);
+        sprintf(pxfn + strlen(pixelfile), "%03u", framenum);
+        FILE *fp = fopen(pxfn, "wb");
         assert(fp);
+        free(pxfn);
         printf("writing %d px from %p\n", todump, px);
         fwrite(px, 1, todump, fp);
         fclose(fp);
@@ -309,14 +339,15 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
         }
         Byte *bg = (Byte *)gct + 3 * background_color_index;
         Word bgc = (bg[0] << 16) + (bg[1] << 8) + bg[2];
-        printf("width:%u  height:%u  bg index:%u (0x%06x) aspect ratio:%u  GCT flag:%u  res:%u (%u)  sort:%u  GCT size:%u (%u)\n",
+        printf("width:%u  height:%u  bg_index:%u (0x%06x) aspect_ratio:%u  GCT_flag:%u  res:%u (%u)  sort:%u  GCT_size:%u (%u)\n",
             logical_screen_width, logical_screen_height,
             background_color_index, bgc, pixel_aspect_ratio,
             global_color_table_flag,
             color_resolution, 1 << (color_resolution + 1),
             sort_flag, global_color_table_size_basis, global_color_table_size);
     } else {
-        printf("width:%u  height:%u  bg index:%u  aspect ratio:%u  GCT flag:%u  res:%u (%u)  sort:%u  GCT size:%u (%u)\n",
+        //printf("width:%u  height:%u  bg_index:%u  aspect_ratio:%u  GCT_flag:%u  res:%u (%u)  sort:%u  GCT_size:%u (%u)\n",
+        printf("width:%u  height:%u  bg_index:%u  NOVALUE aspect_ratio:%u  GCT_flag:%u  res:%u (%u)  sort:%u  GCT_size:%u (%u)\n",
             logical_screen_width, logical_screen_height,
             background_color_index, pixel_aspect_ratio,
             global_color_table_flag,
@@ -325,11 +356,12 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
     }
 
     if (global_color_table_flag) {
-        Dword crc = crc32(gct, global_color_table_size, 0);
-        printf("GCT CRC: %08x\n", (Word)crc);
+        Dword crc = crc32(gct, 3 * global_color_table_size, 0);
+        printf("GCT_CRC: %08x\n", (Word)crc);
         if (opts & OPT_GCT) {
             printf("Global Color Table (GCT) at 0x%0lx:\n", (Dword)((char *)p - d));
-            xdump(gct, 3 * global_color_table_size, (char *)p - d);
+            //xdump(gct, 3 * global_color_table_size, (char *)p - d);
+            dump_ct(gct, global_color_table_size);
         }
         p += 3 * global_color_table_size;
     }
@@ -341,6 +373,7 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
     int got_trailer = 0;
     int transparent_color_index = -1;
     Word xtype;
+    int framenum = 0;
     for (;;) {
         int id = getbyte(&p);
         printf("block id: 0x%0x\n", id);
@@ -353,6 +386,7 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
                         //p = do_image(infile, d, d_lim, p);
 
                         p = do_image(opts,
+                                framenum++,
                                 infile,
                                 pixelfile, lzwfile, bmpfile,
                                 d, d_lim, p,
@@ -377,9 +411,9 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
                             Word transparent_color_flag = packed & 0x1;
                             Word delay_time = getword(&p);
                             transparent_color_index = getbyte(&p);
-                            printf("disposal method:%u  user input flag:%u  transparent color flag:%u",
+                            printf("disposal_method:%u  user_input_flag:%u  transp_color_flag:%u",
                                     disposal_method, user_input_flag, transparent_color_flag);
-                            printf("  delay_time:%u  transparent color index:%u\n",
+                            printf("  delay_time:%u  transp_color_index:%u\n",
                                     delay_time, transparent_color_index);
                             //p += blocksize;
                             if (! transparent_color_flag)
@@ -402,7 +436,32 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
                             Word blocksize = getbyte(&p);
                             printf("Plain Text Extension: %u bytes\n", blocksize);
                             xdump((char *)p, blocksize, 0x0);
-                            p += blocksize;
+                            Word tgleft = getword(&p);
+                            Word tgtop = getword(&p);
+                            Word tgwidth = getword(&p);
+                            Word tgheight = getword(&p);
+                            Word cwidth = getbyte(&p);
+                            Word cheight = getbyte(&p);
+                            Word fg_clr_x = getbyte(&p);
+                            Word bg_clr_x = getbyte(&p);
+                            printf("grid_left: %d grid_top: %d grid_width: %d grid_height: %d cell_width: %d cell_height: %d fg_clr_x: %d bg_clr_x: %d\n",
+                                    tgleft, tgtop, tgwidth, tgheight, cwidth, cheight, fg_clr_x, bg_clr_x);
+                            //p += blocksize;
+                            printf("Plain Text data:\n");
+                            int maxch = tgwidth / cwidth;
+                            for (;;) {
+                                Word subblocksize = getbyte(&p);
+                                printf("  subblocksize: %d (0x%02x)\n", subblocksize, subblocksize);
+                                if (!subblocksize)
+                                    break;
+                                for (int i = 0; i < subblocksize; ) {
+                                    printf("%c", p[i++]);
+                                    if (i % maxch == 0)
+                                        printf("\n");
+                                }
+                                printf("\n");
+                                p += subblocksize;
+                            }
                         } else if (xtype == 0xFF) { /* application extension */
                             Word blocksize = getbyte(&p);
                             printf("Application Extension: %u bytes\n", blocksize);
