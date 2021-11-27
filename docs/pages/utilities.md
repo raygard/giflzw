@@ -41,7 +41,7 @@ Use `-r` to make the program encode and decode random segments of the data incre
 
 The BMP file output is currently for debugging use only. The program makes no attempt to put the BMP pixel rows in correct order. If the GIF is non-interlaced, the BMP will be inverted, because BMP files are ordered with the bottom row of pixels first and the top row last. If the GIF is interlaced, the BMP will look pretty strange. This was only intended as a rough test to see if the decoding was looking correct.
 
-No attempt is made to do anything sensible with an animated GIF.
+[Update 2021-11-27:] For animated GIFs, dumpgif will dump all frames. If -p or -z options are used, the program appends the frame number to the filename specified and dumps the pixel data or LZW data to separate files per frame.
 
 The information in the dump is written in the order that the GIF blocks are encountered. Unless you are very conversant with the GIF specification, you will probably want to have the GIF spec close at hand when you look at the dump output.
 
