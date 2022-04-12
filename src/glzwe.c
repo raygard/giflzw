@@ -1,4 +1,4 @@
-/* glzwd.c -- GIF LZW incremental encoder
+/* glzwe.c -- GIF LZW incremental encoder
  * Copyright 2021 Raymond D. Gardner
  */
 
