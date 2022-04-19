@@ -141,7 +141,7 @@ Byte *do_image(int opts, int framenum, char *infile, char *pixelfile,
         Word background_color_index, Word global_color_table_flag,
         Word global_color_table_size, char *gct, int transparent_color_index)
 {
-    printf("Image Descriptor at 0x%0lx:\n", (Dword)((char *)p - d));
+    printf("0x%0lx:: Image descriptor:\n", (Dword)((char *)p - d));
     printf("Frame num %u\n", framenum);
     Word image_left_pos = getword(&p);
     Word image_top_pos = getword(&p);
@@ -173,7 +173,8 @@ Byte *do_image(int opts, int framenum, char *infile, char *pixelfile,
         Dword crc = crc32(lct, 3 * local_color_table_size, 0);
         printf(" LCT_CRC: %08x\n", (Word)crc);
         if (opts & OPT_LCT) {
-            printf("Local Color Table (LCT):\n");
+            //printf("Local Color Table (LCT):\n");
+            printf("0x%0lx:: LCT (local color table):\n", (Dword)((char *)p - d));
             //xdump(lct, 3 * local_color_table_size, (char *)p - d);
             dump_ct(lct, local_color_table_size);
         }
@@ -196,7 +197,7 @@ Byte *do_image(int opts, int framenum, char *infile, char *pixelfile,
         printf("transp_color: 0x%06x\n", tc);
     }
 
-    printf("Image Data at 0x%0lx:\n", (Dword)((char *)p - d));
+    printf("0x%0lx:: Image data:\n", (Dword)((char *)p - d));
     Word lzw_min_code_size = getbyte(&p);
     printf("LZW init code size:%u\n", lzw_min_code_size);
     char *lzwbuf = (char *)mmalloc(image_size);
@@ -296,12 +297,17 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
     //xdump(d, bufsize, 0);
     /* header */
     char sig[4] = "   ", version[4] = "   ";
+    if (d_lim - d < 14) {
+        // Need at least sig, LSD, trailer
+        printf("NOT A GIF -- too short\n");
+        return;
+    }
     memmove(sig, p, 3);
     p += 3;
     memmove(version, p, 3);
     p += 3;
     if (strcmp(sig, "GIF") != 0) {
-        printf("NOT A GIF\n");
+        printf("NOT A GIF -- bad signature\n");
         return;
     }
     printf("sig:{%s}  version:{%s}\n", sig, version);
@@ -359,7 +365,7 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
         Dword crc = crc32(gct, 3 * global_color_table_size, 0);
         printf("GCT_CRC: %08x\n", (Word)crc);
         if (opts & OPT_GCT) {
-            printf("Global Color Table (GCT) at 0x%0lx:\n", (Dword)((char *)p - d));
+            printf("0x%0lx:: GCT (global color table):\n", (Dword)((char *)p - d));
             //xdump(gct, 3 * global_color_table_size, (char *)p - d);
             dump_ct(gct, global_color_table_size);
         }
@@ -375,8 +381,13 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
     Word xtype;
     int framenum = 0;
     for (;;) {
+        if ((char *)p >= d_lim) {
+            printf("Unexpected EOF -- no trailer block?\n");
+            break;
+        }
         int id = getbyte(&p);
-        printf("block id: 0x%0x\n", id);
+        printf("0x%0lx:: Block id: 0x%0x\n", (Dword)((char *)p - d - 1), id);
+        //printf("block id: 0x%0x\n", id);
         switch (id) {
             case 0x3B:  /* trailer */
                         got_trailer = 1;
@@ -402,7 +413,7 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
                         if (xtype == 0xF9) { /* graphic control extension */
                             Word blocksize = getbyte(&p);
                             //printf("Graphic Control Extension: %u bytes\n", blocksize);
-                            printf("Graphic Control Extension at 0x%0lx: %u bytes\n",
+                            printf("0x%0lx:: Graphic control extension (%u bytes):\n",
                                     (Dword)((char *)p - d - 1), blocksize);
                             xdump((char *)p, blocksize, 0x0);
                             Word packed = getbyte(&p);
@@ -422,17 +433,19 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
                             /* TODO fix this: */
                             assert(terminator == 0);
                         } else if (xtype == 0xFE) {      /* comment extension */
+                            printf("0x%0lx:: Comment extension:\n", (Dword)((char *)p - d));
                             for (;;) {
                                 Word subblocksize = getbyte(&p);
-                                printf("\nComment Extension: %u bytes\n", subblocksize);
                                 if (!subblocksize)
                                     break;
+                                printf("\nComment Extension: %u bytes\n", subblocksize);
                                 xdump((char *)p, subblocksize, 0x0);
                                 printf("%.*s", subblocksize, p);
                                 p += subblocksize;
                             }
                             printf("\n");
                         } else if (xtype == 0x01) { /* plain text extension */
+                            printf("0x%0lx:: Plaintext extension:\n", (Dword)((char *)p - d));
                             Word blocksize = getbyte(&p);
                             printf("Plain Text Extension: %u bytes\n", blocksize);
                             xdump((char *)p, blocksize, 0x0);
@@ -451,9 +464,9 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
                             int maxch = tgwidth / cwidth;
                             for (;;) {
                                 Word subblocksize = getbyte(&p);
-                                printf("  subblocksize: %d (0x%02x)\n", subblocksize, subblocksize);
                                 if (!subblocksize)
                                     break;
+                                printf("  subblocksize: %d (0x%02x)\n", subblocksize, subblocksize);
                                 for (int i = 0; i < subblocksize; ) {
                                     printf("%c", p[i++]);
                                     if (i % maxch == 0)
@@ -463,6 +476,7 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
                                 p += subblocksize;
                             }
                         } else if (xtype == 0xFF) { /* application extension */
+                            printf("0x%0lx:: Application extension:\n", (Dword)((char *)p - d));
                             Word blocksize = getbyte(&p);
                             printf("Application Extension: %u bytes\n", blocksize);
                             xdump((char *)p, blocksize, 0x0);
@@ -472,9 +486,9 @@ void dumpgif(int opts, char *infile, char *pixelfile, char *lzwfile,
                             //FILE *fp = fopen(axid, "wb");
                             for (;;) {
                                 Word subblocksize = getbyte(&p);
-                                printf("\nApplication Data: %u bytes\n", subblocksize);
                                 if (!subblocksize)
                                     break;
+                                printf("\nApplication Data: %u bytes\n", subblocksize);
                                 xdump((char *)p, subblocksize, 0x0);
                                 //fwrite(p, 1, subblocksize, fp);
                                 //printf("%.*s", subblocksize, p);
